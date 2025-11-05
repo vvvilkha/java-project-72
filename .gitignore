@@ -5,6 +5,7 @@ local.properties
 
 /.idea/
 /*.iml
+/jte-classes/
 
 
 *.log
