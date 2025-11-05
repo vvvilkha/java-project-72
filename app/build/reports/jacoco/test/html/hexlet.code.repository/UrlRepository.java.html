@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="ru"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UrlRepository.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">hexlet.code.repository</a> &gt; <span class="el_source">UrlRepository.java</span></div><h1>UrlRepository.java</h1><pre class="source lang-java linenums">package hexlet.code.repository;
+
+import hexlet.code.model.Url;
+import lombok.extern.slf4j.Slf4j;
+
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+import static hexlet.code.repository.BaseRepository.dataSource;
+
+<span class="fc" id="L16">@Slf4j</span>
+<span class="nc" id="L17">public class UrlRepository {</span>
+    public static void save(Url url) throws SQLException {
+<span class="fc" id="L19">        var sql = &quot;INSERT INTO urls (name, created_at) VALUES (?, ?)&quot;;</span>
+        try (
+<span class="fc" id="L21">                var conn = dataSource.getConnection();</span>
+<span class="fc" id="L22">                var preparedStatement = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {</span>
+<span class="fc" id="L23">            preparedStatement.setString(1, url.getName());</span>
+<span class="fc" id="L24">            var createdAt = LocalDateTime.now();</span>
+<span class="fc" id="L25">            preparedStatement.setTimestamp(2, Timestamp.valueOf(createdAt));</span>
+
+<span class="fc" id="L27">            preparedStatement.executeUpdate();</span>
+<span class="fc" id="L28">            var generatedKeys = preparedStatement.getGeneratedKeys();</span>
+<span class="pc bpc" id="L29" title="1 of 2 branches missed.">            if (generatedKeys.next()) {</span>
+<span class="fc" id="L30">                url.setId(generatedKeys.getLong(1));</span>
+<span class="fc" id="L31">                url.setCreatedAt(createdAt);</span>
+            } else {
+<span class="nc" id="L33">                throw new SQLException(&quot;DB have not returned an id after saving an entity&quot;);</span>
+            }
+        }
+<span class="fc" id="L36">    }</span>
+
+    public static Optional&lt;Url&gt; find(Long id) throws SQLException {
+<span class="fc" id="L39">        var sql = &quot;SELECT * FROM urls WHERE id = ?&quot;;</span>
+<span class="fc" id="L40">        try (var conn = dataSource.getConnection();</span>
+<span class="fc" id="L41">             var stmt = conn.prepareStatement(sql)) {</span>
+<span class="fc" id="L42">            stmt.setLong(1, id);</span>
+<span class="fc" id="L43">            var resultSet = stmt.executeQuery();</span>
+<span class="pc bpc" id="L44" title="1 of 2 branches missed.">            if (resultSet.next()) {</span>
+<span class="fc" id="L45">                var name = resultSet.getString(&quot;name&quot;);</span>
+<span class="fc" id="L46">                var createAt = resultSet.getTimestamp(&quot;created_at&quot;).toLocalDateTime();</span>
+
+<span class="fc" id="L48">                var url = new Url(name);</span>
+<span class="fc" id="L49">                url.setCreatedAt(createAt);</span>
+<span class="fc" id="L50">                url.setId(id);</span>
+<span class="fc" id="L51">                return Optional.of(url);</span>
+            }
+<span class="nc" id="L53">            return Optional.empty();</span>
+<span class="pc bpc" id="L54" title="2 of 4 branches missed.">        }</span>
+    }
+
+    public static void clear() {
+<span class="fc" id="L58">        try (var conn = dataSource.getConnection();</span>
+<span class="fc" id="L59">             var stmt = conn.createStatement()) {</span>
+
+<span class="fc" id="L61">            String sql = &quot;DELETE FROM urls;&quot;;</span>
+<span class="fc" id="L62">            stmt.executeUpdate(sql);</span>
+<span class="nc" id="L63">        }   catch (SQLException e) {</span>
+<span class="nc" id="L64">            throw new RuntimeException(&quot;Failed to clear the database&quot;, e);</span>
+<span class="fc" id="L65">        }</span>
+<span class="fc" id="L66">    }</span>
+
+    public static List&lt;Url&gt; getEntities() throws SQLException {
+<span class="fc" id="L69">        var sql = &quot;SELECT * FROM urls&quot;;</span>
+<span class="fc" id="L70">        try (var conn = dataSource.getConnection();</span>
+<span class="fc" id="L71">             var stmt = conn.prepareStatement(sql)) {</span>
+<span class="fc" id="L72">            var resultSet = stmt.executeQuery();</span>
+<span class="fc" id="L73">            var result = new ArrayList&lt;Url&gt;();</span>
+<span class="fc bfc" id="L74" title="All 2 branches covered.">            while (resultSet.next()) {</span>
+<span class="fc" id="L75">                var id = resultSet.getLong(&quot;id&quot;);</span>
+<span class="fc" id="L76">                var name = resultSet.getString(&quot;name&quot;);</span>
+<span class="fc" id="L77">                var createdAt = resultSet.getTimestamp(&quot;created_at&quot;).toLocalDateTime();</span>
+
+<span class="fc" id="L79">                var url = new Url(name);</span>
+<span class="fc" id="L80">                url.setId(id);</span>
+<span class="fc" id="L81">                url.setCreatedAt(createdAt);</span>
+<span class="fc" id="L82">                result.add(url);</span>
+<span class="fc" id="L83">            }</span>
+<span class="fc" id="L84">            return result;</span>
+        }
+    }
+
+    public static Optional&lt;Url&gt; findByName(String name) throws SQLException {
+<span class="fc" id="L89">        var sql = &quot;SELECT * FROM urls WHERE name = ?&quot;;</span>
+<span class="fc" id="L90">        try (var connection = dataSource.getConnection();</span>
+<span class="fc" id="L91">             var stmt = connection.prepareStatement(sql)) {</span>
+<span class="fc" id="L92">            stmt.setString(1, name);</span>
+<span class="fc" id="L93">            var resultSet = stmt.executeQuery();</span>
+<span class="fc bfc" id="L94" title="All 2 branches covered.">            if (resultSet.next()) {</span>
+<span class="fc" id="L95">                var createdAt = resultSet.getTimestamp(&quot;created_at&quot;).toLocalDateTime();</span>
+<span class="fc" id="L96">                var id = resultSet.getLong(&quot;id&quot;);</span>
+<span class="fc" id="L97">                var url = new Url(name, createdAt);</span>
+<span class="fc" id="L98">                url.setId(id);</span>
+<span class="fc" id="L99">                return Optional.of(url);</span>
+            }
+<span class="fc" id="L101">            return Optional.empty();</span>
+<span class="pc bpc" id="L102" title="2 of 4 branches missed.">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

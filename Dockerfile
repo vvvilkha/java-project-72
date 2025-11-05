@@ -4,6 +4,6 @@ WORKDIR /app
 
 COPY /app .
 
-RUN gradle installDist
+RUN ["./gradlew", "clean", "build"]
 
-CMD ./build/install/app/bin/app
+CMD ["./gradlew", "run"]

@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="ru"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UrlCheckController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">hexlet.code.controller</a> &gt; <span class="el_source">UrlCheckController.java</span></div><h1>UrlCheckController.java</h1><pre class="source lang-java linenums">package hexlet.code.controller;
+
+import com.mashape.unirest.http.HttpResponse;
+import com.mashape.unirest.http.Unirest;
+import com.mashape.unirest.http.exceptions.UnirestException;
+import hexlet.code.model.Url;
+import hexlet.code.model.UrlCheck;
+import hexlet.code.repository.UrlRepository;
+import hexlet.code.repository.UrlCheckRepository;
+import hexlet.code.util.NamedRoutes;
+import io.javalin.http.Context;
+import io.javalin.http.NotFoundResponse;
+import lombok.extern.slf4j.Slf4j;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+
+
+import java.sql.SQLException;
+
+<span class="fc" id="L21">@Slf4j</span>
+<span class="nc" id="L22">public class UrlCheckController {</span>
+    public static void create(Context ctx) throws SQLException {
+<span class="fc" id="L24">        var idStr = ctx.pathParam(&quot;id&quot;);</span>
+        try {
+<span class="fc" id="L26">            var id = Long.parseLong(idStr);</span>
+
+<span class="pc" id="L28">            Url url = UrlRepository.find(id).orElseThrow(() -&gt; new NotFoundResponse(&quot;Страница не найдена&quot;));</span>
+<span class="fc" id="L29">            log.info(&quot;Получен ID: {}&quot;, id);</span>
+
+<span class="pc bpc" id="L31" title="1 of 2 branches missed.">            if (!isValidUrl(url.getName())) {</span>
+<span class="nc" id="L32">                ctx.sessionAttribute(&quot;flash&quot;, &quot;Некорректный URL&quot;);</span>
+<span class="nc" id="L33">                ctx.sessionAttribute(&quot;flash-type&quot;, &quot;danger&quot;);</span>
+<span class="nc" id="L34">                ctx.redirect(NamedRoutes.urlPath(id));</span>
+<span class="nc" id="L35">                return;</span>
+            }
+<span class="fc" id="L37">            HttpResponse&lt;String&gt; response = Unirest.get(url.getName()).asString();</span>
+<span class="fc" id="L38">            log.info(&quot;ok&quot;);</span>
+<span class="fc" id="L39">            Document document = Jsoup.parse(response.getBody());</span>
+
+<span class="fc" id="L41">            var code = response.getStatus();</span>
+
+<span class="fc" id="L43">            Element titleTag = document.selectFirst(&quot;title&quot;);</span>
+<span class="pc bpc" id="L44" title="1 of 2 branches missed.">            String title = titleTag != null ? titleTag.text() : &quot;&quot;;</span>
+
+<span class="fc" id="L46">            Element h1Tag = document.selectFirst(&quot;h1&quot;);</span>
+<span class="pc bpc" id="L47" title="1 of 2 branches missed.">            String h1 = h1Tag != null ? h1Tag.text() : &quot;&quot;;</span>
+
+<span class="fc" id="L49">            Element metaDescription = document.selectFirst(&quot;meta[name=description]&quot;);</span>
+<span class="pc bpc" id="L50" title="1 of 2 branches missed.">            String description = metaDescription != null ? metaDescription.attr(&quot;content&quot;) : &quot;&quot;;</span>
+
+<span class="fc" id="L52">            var urlCheck = new UrlCheck(code, title, h1, description, id);</span>
+<span class="fc" id="L53">            UrlCheckRepository.save(urlCheck);</span>
+<span class="fc" id="L54">            log.info(&quot;check saved&quot;);</span>
+
+<span class="fc" id="L56">            ctx.sessionAttribute(&quot;flash&quot;, &quot;Страница успешно проверена&quot;);</span>
+<span class="fc" id="L57">            ctx.sessionAttribute(&quot;flash-type&quot;, &quot;success&quot;);</span>
+<span class="fc" id="L58">            ctx.redirect(NamedRoutes.urlPath(url.getId()));</span>
+
+
+<span class="nc" id="L61">        } catch (UnirestException e) {</span>
+<span class="nc" id="L62">            ctx.sessionAttribute(&quot;flash&quot;, &quot;Некорректный адрес&quot;);</span>
+<span class="nc" id="L63">            ctx.sessionAttribute(&quot;flash-type&quot;, &quot;danger&quot;);</span>
+<span class="nc" id="L64">            ctx.redirect(NamedRoutes.urlPath(Long.parseLong(idStr)));</span>
+<span class="nc" id="L65">        } catch (Exception e) {</span>
+<span class="nc" id="L66">            ctx.sessionAttribute(&quot;flash&quot;, &quot;Произошла ошибка при проверке страницы: &quot; + e.getMessage());</span>
+<span class="nc" id="L67">            ctx.sessionAttribute(&quot;flash-type&quot;, &quot;danger&quot;);</span>
+<span class="nc" id="L68">            ctx.redirect(NamedRoutes.urlPath(Long.parseLong(idStr)));</span>
+<span class="pc" id="L69">        }</span>
+
+<span class="fc" id="L71">    }</span>
+
+    private static boolean isValidUrl(String urlString) {
+        try {
+<span class="fc" id="L75">            new java.net.URL(urlString).toURI();</span>
+<span class="fc" id="L76">            return true;</span>
+<span class="nc" id="L77">        } catch (Exception e) {</span>
+<span class="nc" id="L78">            return false;</span>
+        }
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

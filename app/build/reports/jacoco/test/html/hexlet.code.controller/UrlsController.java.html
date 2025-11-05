@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="ru"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UrlsController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">hexlet.code.controller</a> &gt; <span class="el_source">UrlsController.java</span></div><h1>UrlsController.java</h1><pre class="source lang-java linenums">package hexlet.code.controller;
+
+import hexlet.code.dto.BasePage;
+import hexlet.code.dto.urls.UrlPage;
+import hexlet.code.dto.urls.UrlsPage;
+import hexlet.code.model.Url;
+import hexlet.code.repository.UrlCheckRepository;
+import hexlet.code.repository.UrlRepository;
+import hexlet.code.util.NamedRoutes;
+import io.javalin.http.Context;
+import io.javalin.http.NotFoundResponse;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.http.client.utils.URIBuilder;
+
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.sql.SQLException;
+
+import static io.javalin.rendering.template.TemplateUtil.model;
+
+<span class="fc" id="L23">@Slf4j</span>
+<span class="nc" id="L24">public class UrlsController {</span>
+    public static void index(Context ctx) throws SQLException {
+<span class="fc" id="L26">        var urls = UrlRepository.getEntities();</span>
+<span class="fc" id="L27">        var checks = UrlCheckRepository.getAllUrlCheck();</span>
+<span class="fc" id="L28">        var page = new UrlsPage(urls, checks);</span>
+<span class="fc" id="L29">        page.setFlash(ctx.consumeSessionAttribute(&quot;flash&quot;));</span>
+<span class="fc" id="L30">        page.setFlashType(ctx.consumeSessionAttribute(&quot;flash-type&quot;));</span>
+<span class="fc" id="L31">        ctx.render(&quot;urls/index.jte&quot;, model(&quot;page&quot;, page));</span>
+<span class="fc" id="L32">    }</span>
+
+    public static void show(Context ctx) throws SQLException {
+<span class="fc" id="L35">        var id = ctx.pathParamAsClass(&quot;id&quot;, Long.class).get();</span>
+<span class="fc" id="L36">        var url = UrlRepository.find(id)</span>
+<span class="pc" id="L37">                .orElseThrow(() -&gt; new NotFoundResponse(&quot;Entity with id = &quot; + id + &quot; not found&quot;));</span>
+
+<span class="fc" id="L39">        var checks = UrlCheckRepository.getUrlChecks(id);</span>
+<span class="fc" id="L40">        log.info(&quot;Loaded {} checks for URL ID {}&quot;, checks.size(), id);</span>
+<span class="fc" id="L41">        var page = new UrlPage(url, checks);</span>
+<span class="fc" id="L42">        page.setFlash(ctx.consumeSessionAttribute(&quot;flash&quot;));</span>
+<span class="fc" id="L43">        page.setFlashType(ctx.consumeSessionAttribute(&quot;flash-type&quot;));</span>
+<span class="fc" id="L44">        ctx.render(&quot;urls/show.jte&quot;, model(&quot;page&quot;, page));</span>
+<span class="fc" id="L45">    }</span>
+
+    public static void build(Context ctx) {
+<span class="nc" id="L48">        var page = new BasePage();</span>
+<span class="nc" id="L49">        page.setFlash(ctx.consumeSessionAttribute(&quot;flash&quot;));</span>
+<span class="nc" id="L50">        page.setFlashType(ctx.consumeSessionAttribute(&quot;flash-type&quot;));</span>
+<span class="nc" id="L51">        ctx.render(&quot;urls/build.jte&quot;, model(&quot;page&quot;, page));</span>
+<span class="nc" id="L52">    }</span>
+
+    public static void create(Context ctx) throws SQLException, URISyntaxException, MalformedURLException {
+<span class="fc" id="L55">        var name = ctx.formParamAsClass(&quot;url&quot;, String.class).get();</span>
+
+<span class="fc" id="L57">        URL uri = null;</span>
+        try {
+<span class="fc" id="L59">            uri = new URI(name).toURL();</span>
+<span class="nc" id="L60">        } catch (Exception e) {</span>
+<span class="nc" id="L61">            ctx.sessionAttribute(&quot;flash&quot;, &quot;Некорректный URL&quot;);</span>
+<span class="nc" id="L62">            ctx.sessionAttribute(&quot;flash-type&quot;, &quot;danger&quot;);</span>
+<span class="nc" id="L63">            ctx.redirect(NamedRoutes.buildPath());</span>
+<span class="nc" id="L64">            return;</span>
+<span class="fc" id="L65">        }</span>
+
+<span class="pc bpc" id="L67" title="2 of 4 branches missed.">        if (name == null || name.isEmpty()) {</span>
+<span class="nc" id="L68">            ctx.sessionAttribute(&quot;flash&quot;, &quot;Поле URL не должно быть пустым&quot;);</span>
+<span class="nc" id="L69">            ctx.sessionAttribute(&quot;flash-type&quot;, &quot;warning&quot;);</span>
+<span class="nc" id="L70">            ctx.redirect(NamedRoutes.buildPath());</span>
+<span class="nc" id="L71">            return;</span>
+        }
+
+
+<span class="fc" id="L75">        var protocol = uri.getProtocol();</span>
+<span class="fc" id="L76">        var port = uri.getPort();</span>
+<span class="fc" id="L77">        var host = uri.getHost();</span>
+
+<span class="fc" id="L79">        URL url = new URIBuilder().setScheme(protocol).setHost(host).setPort(port).build().toURL();</span>
+
+<span class="pc bpc" id="L81" title="1 of 2 branches missed.">        if (UrlRepository.findByName(String.valueOf(url)).isEmpty()) {</span>
+<span class="fc" id="L82">            var currentUrl = new Url(String.valueOf(url));</span>
+<span class="fc" id="L83">            UrlRepository.save(currentUrl);</span>
+<span class="fc" id="L84">        } else {</span>
+<span class="nc" id="L85">            ctx.sessionAttribute(&quot;flash&quot;, &quot;Страница уже существует&quot;);</span>
+<span class="nc" id="L86">            ctx.sessionAttribute(&quot;flash-type&quot;, &quot;info&quot;);</span>
+<span class="nc" id="L87">            ctx.redirect(NamedRoutes.urlsPath());</span>
+<span class="nc" id="L88">            return;</span>
+        }
+
+<span class="fc" id="L91">        ctx.sessionAttribute(&quot;flash&quot;, &quot;Страница успешно добавлена&quot;);</span>
+<span class="fc" id="L92">        ctx.sessionAttribute(&quot;flash-type&quot;, &quot;success&quot;);</span>
+<span class="fc" id="L93">        ctx.redirect(NamedRoutes.urlsPath());</span>
+<span class="fc" id="L94">    }</span>
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

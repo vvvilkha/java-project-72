@@ -39,6 +39,6 @@ content = @`
 
 `,
     footer = @`
-<p>Created by Yulia Baranova</p>
+<p>Created by Gleb Vilkha</p>
 `
 )

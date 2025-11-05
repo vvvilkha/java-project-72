@@ -1,9 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <checkstyle version="10.26.1">
 <file name="C:\Users\vilkh\IdeaProjects\java-project-72\app\src\main\java\hexlet\code\App.java">
-<error line="18" column="8" severity="error" message="Неиспользуемый import - java.io.InputStream." source="com.puppycrawl.tools.checkstyle.checks.imports.UnusedImportsCheck"/>
-<error line="21" column="8" severity="error" message="Неиспользуемый import - java.sql.Connection." source="com.puppycrawl.tools.checkstyle.checks.imports.UnusedImportsCheck"/>
-<error line="23" column="8" severity="error" message="Неиспользуемый import - java.sql.Statement." source="com.puppycrawl.tools.checkstyle.checks.imports.UnusedImportsCheck"/>
 </file>
 <file name="C:\Users\vilkh\IdeaProjects\java-project-72\app\src\main\java\hexlet\code\controller\UrlCheckController.java">
 </file>

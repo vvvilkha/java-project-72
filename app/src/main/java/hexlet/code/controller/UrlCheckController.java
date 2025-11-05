@@ -38,7 +38,7 @@ public class UrlCheckController {
             log.info("ok");
             Document document = Jsoup.parse(response.getBody());
 
-            var code = response.getCode();
+            var code = response.getStatus();
 
             Element titleTag = document.selectFirst("title");
             String title = titleTag != null ? titleTag.text() : "";
@@ -78,4 +78,5 @@ public class UrlCheckController {
             return false;
         }
     }
+
 }
