@@ -2,40 +2,45 @@ name: Java CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ "main" ]
   pull_request:
+    branches: [ "main" ]
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
 
-    env:
-      # Сетевые флапы/IPv6 — уменьшаем шанс ошибок сети
-      NODE_OPTIONS: --dns-result-order=ipv4first
-      GRADLE_OPTS: -Djava.net.preferIPv4Stack=true
+    runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-      - name: Validate Gradle Wrapper
-        uses: gradle/actions/wrapper-validation@v3
-
-      - name: Setup Java
-        uses: actions/setup-java@v4
+      - name: Set up JDK 21
+        uses: actions/setup-java@v3
         with:
-          distribution: temurin
-          java-version: 21
-          cache: gradle
+          java-version: '21'
+          distribution: 'temurin'
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
+      - name: Cache Gradle packages
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle
 
-      - name: Build & Test & Coverage
-        run: ./gradlew clean test jacocoTestReport --stacktrace
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+        working-directory: app
 
-      - name: SonarCloud
+      - name: Run tests and generate coverage
+        run: ./gradlew clean test jacocoTestReport
+        working-directory: app
+
+      - name: Run SonarCloud analysis
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: ./gradlew sonar -Dsonar.login=${{ env.SONAR_TOKEN }} --stacktrace
+        run: ./gradlew sonar
+        working-directory: app
