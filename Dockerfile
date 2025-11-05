@@ -1,9 +1,6 @@
 FROM gradle:8.14-jdk21
-
 WORKDIR /app
-
-COPY /app .
-
-RUN ["./gradlew", "clean", "build"]
-
-CMD ["./gradlew", "run"]
+COPY app/ ./
+RUN chmod +x gradlew
+RUN ./gradlew clean build --no-daemon
+CMD ["./gradlew", "run", "--no-daemon"]
