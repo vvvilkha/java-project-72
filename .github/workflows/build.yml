@@ -1,29 +1,41 @@
 name: Java CI
 
 on:
-  - push
-  - pull_request
+  push:
+    branches: [ main ]
+  pull_request:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    env:
+      # Сетевые флапы/IPv6 — уменьшаем шанс ошибок сети
+      NODE_OPTIONS: --dns-result-order=ipv4first
+      GRADLE_OPTS: -Djava.net.preferIPv4Stack=true
 
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate Gradle Wrapper
+        uses: gradle/actions/wrapper-validation@v3
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
         with:
-          java-version: '21'
-          distribution: 'temurin'
-      - uses: gradle/actions/wrapper-validation@v3
-        with:
-          gradle-version: 8.7
-      - run: make checkstyleMain
-      - run: make test
-      - name: Publish code coverage
-        uses: paambaati/codeclimate-action@v8.0.0
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Build & Test & Coverage
+        run: ./gradlew clean test jacocoTestReport --stacktrace
+
+      - name: SonarCloud
         env:
-          CC_TEST_REPORTER_ID: ${{secrets.CC_TEST_REPORTER_ID}}
-          JACOCO_SOURCE_PATH: ${{github.workspace}}/app/src/main/java
-        with:
-          coverageCommand: make report
-          coverageLocations: ${{github.workspace}}/app/build/reports/jacoco/test/jacocoTestReport.xml:jacoco
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: ./gradlew sonar -Dsonar.login=${{ env.SONAR_TOKEN }} --stacktrace
