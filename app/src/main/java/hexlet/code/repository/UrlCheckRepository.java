@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 
 public class UrlCheckRepository extends BaseRepository {
@@ -25,9 +26,9 @@ public class UrlCheckRepository extends BaseRepository {
              var stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             stmt.setLong(1, urlCheck.getUrlId());
             stmt.setInt(2, urlCheck.getStatusCode());
-            stmt.setString(3, urlCheck.getH1());
-            stmt.setString(4, urlCheck.getTitle());
-            stmt.setString(5, urlCheck.getDescription());
+            stmt.setString(3, urlCheck.getH1() == null ? "" : urlCheck.getH1());
+            stmt.setString(4, urlCheck.getTitle() == null ? "" : urlCheck.getTitle());
+            stmt.setString(5, urlCheck.getDescription() == null ? "" : urlCheck.getDescription());
             var createdAt = LocalDateTime.now();
             stmt.setTimestamp(6, Timestamp.valueOf(createdAt));
             stmt.executeUpdate();
@@ -70,7 +71,7 @@ public class UrlCheckRepository extends BaseRepository {
         return result;
     }
 
-    public static UrlCheck getLastUrlCheck(Long urlId) {
+    public static Optional<UrlCheck> getLastUrlCheck(Long urlId) {
         UrlCheck urlCheck = new UrlCheck();
         String sql = "SELECT id, url_id, status_code, h1, title, description, created_at\n"
                 + "FROM url_checks\n"
@@ -87,12 +88,12 @@ public class UrlCheckRepository extends BaseRepository {
                 var h1 = resultSet.getString("h1");
                 var description = resultSet.getString("description");
                 var createdAt = resultSet.getTimestamp("created_at").toLocalDateTime();
-                return new UrlCheck(code, title, h1, description, urlId, createdAt);
+                return Optional.of(new UrlCheck(code, title, h1, description, urlId, createdAt));
             }
         } catch (SQLException e) {
             throw new RuntimeException("Error sql exception", e);
         }
-        return urlCheck;
+        return Optional.empty();
     }
 
     public static Map<Long, UrlCheck> getAllUrlCheck() {

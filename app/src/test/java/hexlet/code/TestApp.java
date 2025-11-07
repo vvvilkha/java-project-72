@@ -41,7 +41,6 @@ class TestApp {
 
         app = App.getApp();
 
-        // Очистка базы данных перед каждым тестом
         UrlRepository.clear();
     }
 
@@ -49,7 +48,6 @@ class TestApp {
     public static void tearDown() throws IOException {
         mockWebServer.shutdown();
     }
-
 
     @Test
     public void testMainPage() {
@@ -60,8 +58,6 @@ class TestApp {
         });
     }
 
-
-    //проверка сохранения урла в бд
     @Test
     public void testUrlPage() throws SQLException {
         var url = new Url("https://rutube.ru");
@@ -72,7 +68,6 @@ class TestApp {
         });
     }
 
-    //создание нового урла
     @Test
     public void testCreateUrl() {
         JavalinTest.test(app, (server, client) -> {
@@ -86,25 +81,35 @@ class TestApp {
     }
 
     @Test
-    public void testCheck() throws SQLException {
-
+    public void testCheck() throws Exception {
         String mockUrl = mockWebServer.url("/").toString();
+
         Url url = new Url(mockUrl);
         UrlRepository.save(url);
 
-        // Получаем фактический ID после сохранения
-        Long savedUrlId = UrlRepository.findByName(mockUrl).get().getId();
+        Long savedUrlId = UrlRepository.findByName(mockUrl)
+                .orElseThrow()
+                .getId();
 
         JavalinTest.test(app, (server, client) -> {
-            var response = client.post(NamedRoutes.checksPath(savedUrlId));
-            assertThat(response.code()).isEqualTo(200);
+            var postResp = client.post(NamedRoutes.checksPath(savedUrlId));
+            assertThat(postResp.code()).isEqualTo(200);
 
-            response = client.get(NamedRoutes.urlPath(savedUrlId));
-            var urlCheck = UrlCheckRepository.getLastUrlCheck(savedUrlId);
-            assertThat(response.code()).isEqualTo(200);
-            assertThat(response.body().string()).contains("Example Domain");
-            assertThat(urlCheck.getTitle()).contains("Example Domain");
+            var getResp = client.get(NamedRoutes.urlPath(savedUrlId));
+            assertThat(getResp.code()).isEqualTo(200);
 
+            var html = getResp.body().string();
+            assertThat(html).contains("Example Domain");
+
+            var lastCheckOpt = UrlCheckRepository.getLastUrlCheck(savedUrlId);
+            assertThat(lastCheckOpt).isPresent();
+
+            var lastCheck = lastCheckOpt.get();
+            assertThat(lastCheck.getStatusCode()).isEqualTo(200);
+            assertThat(lastCheck.getTitle()).isEqualTo("Example Domain");
+            assertThat(lastCheck.getH1()).isEqualTo("Example Domain");
+            assertThat(lastCheck.getDescription()).isNotBlank();
+            assertThat(lastCheck.getDescription()).contains("");
         });
     }
 

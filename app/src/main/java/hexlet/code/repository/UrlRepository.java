@@ -43,10 +43,10 @@ public class UrlRepository {
             var resultSet = stmt.executeQuery();
             if (resultSet.next()) {
                 var name = resultSet.getString("name");
-                var createAt = resultSet.getTimestamp("created_at").toLocalDateTime();
+                var createdAt = resultSet.getTimestamp("created_at").toLocalDateTime();
 
                 var url = new Url(name);
-                url.setCreatedAt(createAt);
+                url.setCreatedAt(createdAt);
                 url.setId(id);
                 return Optional.of(url);
             }
@@ -94,7 +94,7 @@ public class UrlRepository {
             if (resultSet.next()) {
                 var createdAt = resultSet.getTimestamp("created_at").toLocalDateTime();
                 var id = resultSet.getLong("id");
-                var url = new Url(name, createdAt);
+                var url = new Url(name);
                 url.setId(id);
                 return Optional.of(url);
             }

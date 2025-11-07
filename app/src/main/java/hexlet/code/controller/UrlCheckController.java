@@ -15,8 +15,8 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
-
 import java.sql.SQLException;
+
 
 @Slf4j
 public class UrlCheckController {
@@ -34,6 +34,7 @@ public class UrlCheckController {
                 ctx.redirect(NamedRoutes.urlPath(id));
                 return;
             }
+
             HttpResponse<String> response = Unirest.get(url.getName()).asString();
             log.info("ok");
             Document document = Jsoup.parse(response.getBody());
@@ -41,13 +42,23 @@ public class UrlCheckController {
             var code = response.getStatus();
 
             Element titleTag = document.selectFirst("title");
-            String title = titleTag != null ? titleTag.text() : "";
+            String title = (titleTag != null && !titleTag.text().isBlank())
+                    ? titleTag.text()
+                    : document.title();
 
             Element h1Tag = document.selectFirst("h1");
-            String h1 = h1Tag != null ? h1Tag.text() : "";
+            String h1 = (h1Tag != null && !h1Tag.text().isBlank())
+                    ? h1Tag.text()
+                    : title;
 
+            String description;
             Element metaDescription = document.selectFirst("meta[name=description]");
-            String description = metaDescription != null ? metaDescription.attr("content") : "";
+            if (metaDescription != null && !metaDescription.attr("content").isBlank()) {
+                description = metaDescription.attr("content");
+            } else {
+                Element p = document.selectFirst("p");
+                description = (p != null && !p.text().isBlank()) ? p.text() : title;
+            }
 
             var urlCheck = new UrlCheck(code, title, h1, description, id);
             UrlCheckRepository.save(urlCheck);
@@ -67,7 +78,6 @@ public class UrlCheckController {
             ctx.sessionAttribute("flash-type", "danger");
             ctx.redirect(NamedRoutes.urlPath(Long.parseLong(idStr)));
         }
-
     }
 
     private static boolean isValidUrl(String urlString) {
