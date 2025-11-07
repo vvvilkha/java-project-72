@@ -80,7 +80,7 @@ public class UrlCheckController {
         }
     }
 
-    private static boolean isValidUrl(String urlString) {
+    public static boolean isValidUrl(String urlString) {
         try {
             new java.net.URL(urlString).toURI();
             return true;
