@@ -50,7 +50,7 @@ public class UrlCheckRepository extends BaseRepository {
         var sql = "SELECT * FROM url_checks WHERE url_id = ? ORDER BY id DESC";
         try (var connection = dataSource.getConnection();
              var stmt = connection.prepareStatement(sql)) {
-            stmt.setLong(1, urlId); // Подставляем значение url_id
+            stmt.setLong(1, urlId);
             var resultSet = stmt.executeQuery();
             while (resultSet.next()) {
                 var id = resultSet.getLong("id");
@@ -59,7 +59,8 @@ public class UrlCheckRepository extends BaseRepository {
                 var h1 = resultSet.getString("h1");
                 var description = resultSet.getString("description");
                 var createdAt = resultSet.getTimestamp("created_at").toLocalDateTime();
-                var urlCheck = new UrlCheck(code, title, h1, description, urlId, createdAt);
+                var urlCheck = new UrlCheck(code, title, h1, description, urlId);
+                urlCheck.setCreatedAt(createdAt);
                 urlCheck.setId(id);
                 result.add(urlCheck);
             }
@@ -72,7 +73,6 @@ public class UrlCheckRepository extends BaseRepository {
     }
 
     public static Optional<UrlCheck> getLastUrlCheck(Long urlId) {
-        UrlCheck urlCheck = new UrlCheck();
         String sql = "SELECT id, url_id, status_code, h1, title, description, created_at\n"
                 + "FROM url_checks\n"
                 + "WHERE url_id = ?\n"
@@ -88,7 +88,9 @@ public class UrlCheckRepository extends BaseRepository {
                 var h1 = resultSet.getString("h1");
                 var description = resultSet.getString("description");
                 var createdAt = resultSet.getTimestamp("created_at").toLocalDateTime();
-                return Optional.of(new UrlCheck(code, title, h1, description, urlId, createdAt));
+                UrlCheck urlCheck = new UrlCheck(code, title, h1, description, urlId);
+                urlCheck.setCreatedAt(createdAt);
+                return Optional.of(urlCheck);
             }
         } catch (SQLException e) {
             throw new RuntimeException("Error sql exception", e);
@@ -111,7 +113,8 @@ public class UrlCheckRepository extends BaseRepository {
                 var h1 = resultSet.getString("h1");
                 var description = resultSet.getString("description");
                 var createdAt = resultSet.getTimestamp("created_at").toLocalDateTime();
-                var urlCheck = new UrlCheck(code, title, h1, description, urlId, createdAt);
+                var urlCheck = new UrlCheck(code, title, h1, description, urlId);
+                urlCheck.setCreatedAt(createdAt);
                 result.put(urlId, urlCheck);
             }
 
